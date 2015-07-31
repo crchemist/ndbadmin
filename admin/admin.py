@@ -4,8 +4,7 @@ from google.appengine.ext import ndb
 from webapp2_extras import jinja2
 
 from models_admin import *
-import settings
-
+from ndbadmin import settings
 
 actions_map = {
     "c": "Add",

@@ -5,7 +5,7 @@ import admin
 
 urlpatterns = [
     # Admin panel
-    Route('/', admin.AdminHandler, 'admin_panel', strict_slash=True),
+    Route('/admin/', admin.AdminHandler, 'admin_panel', strict_slash=True),
     # Real life usage:
     #Route('/admin/', admin.AdminHandler, 'admin_panel', strict_slash=True),
     # and CRUD - create/update, list, delete items

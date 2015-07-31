@@ -4,7 +4,7 @@ DEBUG = True
 
 CONFIG = {
     'webapp2_extras.jinja2': {
-        'template_path': 'templates',
+        'template_path': 'ndbadmin/templates',
         'compiled_path': None,
         'force_compiled': False,
         'environment_args': {
