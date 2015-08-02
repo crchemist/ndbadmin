@@ -16,8 +16,12 @@
         <div class="navbar">
             <div class="navbar-inner">
                 <ul class="nav">
-                    <li><a  href="{{ url_for('admin_crud', model='Item', action='r') }}">Items</a></li>
-                    <li><a  href="{{ url_for('admin_crud', model='Order', action='r') }}">Orders</a></li>
+                    {% for model in models %}
+                        <li>
+                            <a  href="{{ url_for('admin_crud', model=model, action='r')}}">
+                              {{ model }}s</a>
+                        </li>
+                    {% endfor %}
                 </ul>
             </div>
         </div>

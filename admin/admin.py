@@ -35,7 +35,7 @@ class AdminHandler(BaseHandler):
     #@admin_required
     def get(self):
         msg = self.request.GET.get('msg')
-        self.render_template("admin_panel.html", **{"msg": msg})
+        self.render_template("admin_panel.html", **{"msg": msg, 'models': MODELS})
 
 
 class CrudHandler(BaseHandler):
@@ -197,7 +197,4 @@ def nested_setattr(obj, name, value):
             obj = struct_obj
         else:
             obj = new_obj
-            
     setattr(obj, nested_names[-1], value)
-    
-        
