@@ -39,34 +39,6 @@ class AdminHandler(BaseHandler):
 
 
 class CrudHandler(BaseHandler):
-    """
-    Admin CRUD UI.
-
-    Model must have Meta class, e.g.:
-    class Model(ndb.Model):
-        ...
-
-        class Meta():
-            # templates
-            # CRUD use '/admin/[model]/' path prefix, model name is lower case
-            c = "" # new item template
-            r = "" # items list template
-            u = "" # edit item template
-            d = "" # delete item template
-
-            # sample
-            def __init__(self):
-                self.fields = [
-                    fields.TextField("name", "Name:"),
-                    fields.KeyField("site", "Select site:", query=Site.query()),
-                    fields.MoneyField("budget", "Budget:", required=True),
-                    fields.CheckboxField("is_active", "Active?"),
-                    fields.DateField("due_date", "Due date")
-                    ...
-                ]
-            }
-    """
-
     # default template names
     c = "create.html"
     r = "read.html"
@@ -82,7 +54,7 @@ class CrudHandler(BaseHandler):
         cursor = self.request.get('cursor')
         next_c = None
         per_page = getattr(settings, "PER_PAGE", 10)
-        item_id = self.request.GET.get("id", None)
+        item_id = self.request.GET.get("key", None)
         msg = self.request.GET.get("msg", None)
 
         if not model in MODELS:
@@ -103,8 +75,10 @@ class CrudHandler(BaseHandler):
 
         # item
         if item_id:
-            item = m.get_by_id(int(item_id))
+            item_key = ndb.Key(urlsafe=item_id)
+            item = item_key.get()
             if action == "u":
+                fields.pop()
                 for f in fields:
                     f.initial = nested_getattr(item, f.field)
 
@@ -155,7 +129,8 @@ class CrudHandler(BaseHandler):
 
         # item: Delete or Update
         if item_id:
-            item = m.get_by_id(int(item_id))
+            item_key = ndb.Key(urlsafe=item_id)
+            item = item_key.get()
 
             if action == "d":
                 msg = "%s '%s' has been removed" % (model, item)
@@ -169,10 +144,11 @@ class CrudHandler(BaseHandler):
         # Create
         elif action == "c":
             fields = m.Meta().fields
-            item = m()
+            parent = fields.pop()
+            item = m(parent=parent.parse(data.getall(parent.field)))
             for f in fields:
                 nested_setattr(item, f.field, f.parse(data.getall(f.field)))
-            item.put()
+            item_key = item.put()
             msg = "%s '%s' added" % (model, item)
 
         self.redirect(self.uri_for('admin_crud', model=model, action="r") \
