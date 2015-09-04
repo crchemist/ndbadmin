@@ -68,6 +68,9 @@ class CrudHandler(BaseHandler):
         path = "/admin/%s/" % model.lower()
         template = m.Meta.__dict__.get(action, getattr(self, action))
         fields = m.Meta().fields
+        parent = m.Meta().parent
+        if parent:
+            fields.append(parent)
 
         # if no template - fallback to default one
         if not os.path.isfile('./templates' + path + template):
@@ -77,8 +80,9 @@ class CrudHandler(BaseHandler):
         if item_id:
             item_key = ndb.Key(urlsafe=item_id)
             item = item_key.get()
-            if action == "u":
+            if parent:
                 fields.pop()
+            if action == "u":
                 for f in fields:
                     f.initial = nested_getattr(item, f.field)
 
@@ -98,6 +102,8 @@ class CrudHandler(BaseHandler):
                 next_c = next_curs.urlsafe()
             else:
                 next_c = None
+            if parent:
+                fields.pop()
 
         content = {
                    "model": model,
@@ -116,7 +122,7 @@ class CrudHandler(BaseHandler):
     #@admin_required
     def post(self, model, action):
         item = None
-        item_id = self.request.GET.get("id", None)
+        item_id = self.request.GET.get("key", None)
         data = self.request.POST
         msg = ""
 
@@ -144,8 +150,11 @@ class CrudHandler(BaseHandler):
         # Create
         elif action == "c":
             fields = m.Meta().fields
-            parent = fields.pop()
-            item = m(parent=parent.parse(data.getall(parent.field)))
+            parent = m.Meta().parent
+            if parent:
+                item = m(parent=parent.parse(data.getall(parent.field)))
+            else:
+                item = m()
             for f in fields:
                 nested_setattr(item, f.field, f.parse(data.getall(f.field)))
             item_key = item.put()
