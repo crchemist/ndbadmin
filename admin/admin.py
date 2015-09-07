@@ -68,9 +68,6 @@ class CrudHandler(BaseHandler):
         path = "/admin/%s/" % model.lower()
         template = m.Meta.__dict__.get(action, getattr(self, action))
         fields = m.Meta().fields
-        parent = m.Meta().parent
-        if parent:
-            fields.append(parent)
 
         # if no template - fallback to default one
         if not os.path.isfile('./templates' + path + template):
@@ -80,8 +77,6 @@ class CrudHandler(BaseHandler):
         if item_id:
             item_key = ndb.Key(urlsafe=item_id)
             item = item_key.get()
-            if parent:
-                fields.pop()
             if action == "u":
                 for f in fields:
                     f.initial = nested_getattr(item, f.field)
@@ -102,8 +97,6 @@ class CrudHandler(BaseHandler):
                 next_c = next_curs.urlsafe()
             else:
                 next_c = None
-            if parent:
-                fields.pop()
 
         content = {
                    "model": model,
@@ -150,9 +143,10 @@ class CrudHandler(BaseHandler):
         # Create
         elif action == "c":
             fields = m.Meta().fields
-            parent = m.Meta().parent
+            parent_getter = getattr(m, 'get_parent', None)
+            parent = parent_getter and parent_getter()
             if parent:
-                item = m(parent=parent.parse(data.getall(parent.field)))
+                item = m(parent=parent)
             else:
                 item = m()
             for f in fields:
