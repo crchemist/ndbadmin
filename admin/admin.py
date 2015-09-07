@@ -78,7 +78,6 @@ class CrudHandler(BaseHandler):
             item_key = ndb.Key(urlsafe=item_id)
             item = item_key.get()
             if action == "u":
-                fields.pop()
                 for f in fields:
                     f.initial = nested_getattr(item, f.field)
 
@@ -116,7 +115,7 @@ class CrudHandler(BaseHandler):
     #@admin_required
     def post(self, model, action):
         item = None
-        item_id = self.request.GET.get("id", None)
+        item_id = self.request.GET.get("key", None)
         data = self.request.POST
         msg = ""
 
@@ -144,8 +143,12 @@ class CrudHandler(BaseHandler):
         # Create
         elif action == "c":
             fields = m.Meta().fields
-            parent = fields.pop()
-            item = m(parent=parent.parse(data.getall(parent.field)))
+            parent_getter = getattr(m, 'get_parent', None)
+            parent = parent_getter and parent_getter()
+            if parent:
+                item = m(parent=parent)
+            else:
+                item = m()
             for f in fields:
                 nested_setattr(item, f.field, f.parse(data.getall(f.field)))
             item_key = item.put()
