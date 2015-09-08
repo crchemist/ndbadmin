@@ -79,6 +79,9 @@ class CrudHandler(BaseHandler):
             item = item_key.get()
             if action == "u":
                 for f in fields:
+                    if f.field not in m.FIELDS:
+                        fields.pop(fields.index(f))
+                        continue
                     f.initial = nested_getattr(item, f.field)
 
         # list
@@ -143,14 +146,18 @@ class CrudHandler(BaseHandler):
         # Create
         elif action == "c":
             fields = m.Meta().fields
+            field_map = {}
+            for f in fields:
+                field_map[f.field] = f.parse(data.getall(f.field))
             parent_getter = getattr(m, 'get_parent', None)
-            parent = parent_getter and parent_getter()
+            parent = parent_getter and parent_getter(**field_map)
             if parent:
                 item = m(parent=parent)
             else:
                 item = m()
-            for f in fields:
-                nested_setattr(item, f.field, f.parse(data.getall(f.field)))
+            for f in field_map:
+                if f in m.FIELDS:
+                    nested_setattr(item, f, field_map[f])
             item_key = item.put()
             msg = "%s '%s' added" % (model, item)
 
